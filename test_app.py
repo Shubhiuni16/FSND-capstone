@@ -3,16 +3,13 @@ import os
 import unittest
 import json
 from flask_sqlalchemy import SQLAlchemy
-from settings import DB_NAME, DB_USER, DB_PASSWORD
-
 from app import create_app
 from models import setup_db, Movies, Actors
-from settings import DATABASE_PATH
 class CapstoneTests(unittest.TestCase):
     def setUp(self):
         self.app = create_app()
         self.client = self.app.test_client
-        self.database_path = DATABASE_PATH
+        self.database_path = os.environ.get("DATABASE_PATH")
         # self.unauthorized_jwt = os.environ['INVALID_TOKEN']
         self.assistant_jwt = os.environ['CASTING_ASSISTANT_JWT']
         # self.producer_jwt = os.environ['PRODUCER_TOKEN']

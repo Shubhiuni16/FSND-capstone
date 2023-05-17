@@ -4,9 +4,8 @@ from sqlalchemy import Column, String, Integer, create_engine, Table
 from flask_sqlalchemy import SQLAlchemy
 import json
 # from sqlalchemy.ext.declarative import declarative_base
-from settings import DB_NAME, DB_USER, DB_PASSWORD, DATABASE_PATH
 
-database_path = DATABASE_PATH
+database_path = os.environ.get("DATABASE_PATH")
 # Base = declarative_base()
 db = SQLAlchemy()
 
