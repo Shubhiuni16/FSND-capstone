@@ -3,6 +3,7 @@
 This Application will allow to add movies and actors details that can help agency to maintain database and hire actors for different movies.
 
 ### APP is hosted at https://udaacity-fsnd-capstone.onrender.com
+### In local run it will run at http://127.0.0.1:8080
 
 As this currently contains only backend implementation so we can access endpoints through the postman collection in this repo
 
