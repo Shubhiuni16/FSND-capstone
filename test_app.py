@@ -5,13 +5,18 @@ import json
 from flask_sqlalchemy import SQLAlchemy
 from app import create_app
 from models import setup_db, Movies, Actors
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class CapstoneTests(unittest.TestCase):
     def setUp(self):
         self.app = create_app()
+        self.db = SQLAlchemy(self.app)
         self.client = self.app.test_client
         self.database_path = os.environ.get("DATABASE_PATH")
         # self.unauthorized_jwt = os.environ['INVALID_TOKEN']
-        self.assistant_jwt = os.environ['CASTING_ASSISTANT_JWT']
+        self.producer_jwt = os.environ["EXECUTIVE_PRODUCER_JWT"]
         # self.producer_jwt = os.environ['PRODUCER_TOKEN']
         setup_db(self.app, self.database_path)
 
@@ -25,7 +30,7 @@ class CapstoneTests(unittest.TestCase):
     Write at least one test for each test for successful operation and for expected errors.
     """
     def testGetMovies(self):
-        authHeader = {'Authorization': f'Bearer {self.assistant_jwt}'}
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
         res=self.client().get('/movies', headers=authHeader)
         data=json.loads(res.data)
         self.assertEqual(res.status_code,200)
@@ -37,7 +42,7 @@ class CapstoneTests(unittest.TestCase):
         self.assertEqual(res.status_code,401)
 
     def testGetActors(self):
-        authHeader = {'Authorization': f'Bearer {self.assistant_jwt}'}
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
         res = self.client().get('/actors',headers=authHeader)
         data=json.loads(res.data)
         self.assertEqual(res.status_code,200)
@@ -48,100 +53,152 @@ class CapstoneTests(unittest.TestCase):
         data=json.loads(res.data)
         self.assertEqual(res.status_code,401)
 
-    # def test_delete_question(self):
-    #     new_question=Question(
-    #         question="What is your name",
-    #         answer="Shubhi",
-    #         difficulty=1,
-    #         category=2
-    #     )
-    #     self.db.session.add(new_question)
-    #     self.db.session.commit()
-    #     id=new_question.id
-    #     res = self.client().delete('/questions/'+str(id))
-    #     data=json.loads(res.data)
-    #     self.assertEqual(res.status_code,200)
-    #     self.assertEqual(data['id'],id)
+    def testDeleteMovie(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newMovie=Movies(
+            title="What is your name",
+            release_date="15th March 2024"
+        )
+        self.db.session.add(newMovie)
+        self.db.session.commit()
+        id=newMovie.id
+        res = self.client().delete('/movies/'+str(id),headers=authHeader)
+        self.assertEqual(res.status_code,200)
+        self.assertEqual(res.data.decode(),"DELETED")
 
-    # def test_delete_question_error(self):
-    #     res = self.client().delete('/questions/1000')
-    #     data=json.loads(res.data)
-    #     self.assertEqual(res.status_code,422)
-    #     self.assertEqual(data['success'],False)
+    def testDeleteMovie_error(self):
+        newMovie=Movies(
+            title="What is your name",
+            release_date="15th March 2024"
+        )
+        self.db.session.add(newMovie)
+        self.db.session.commit()
+        id=newMovie.id
+        res = self.client().delete('/movies/'+str(id))
+        self.assertEqual(res.status_code,401)
+        
+    def testDeleteActor(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newActor=Actors(
+            name="Preeti",
+            age="22",
+            gender="Female"
+        )
+        self.db.session.add(newActor)
+        self.db.session.commit()
+        id=newActor.id
+        res = self.client().delete('/actors/'+str(id),headers=authHeader)
+        self.assertEqual(res.status_code,200)
+        self.assertEqual(res.data.decode(),"DELETED")
 
-    # def test_add_question(self):
-    #     new_question={
-    #         "question":"What is your name",
-    #         "answer":"Shubhi",
-    #         "difficulty":1,
-    #         "category":2
-    #     }
-    #     res = self.client().post('/questions',json=new_question)
-    #     data = json.loads(res.data)
-    #     self.assertEqual(res.status_code, 200)
-    #     self.assertEqual(data['success'],True)
+    def testDeleteActor_error(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        res = self.client().delete('/movies/100',headers=authHeader)
+        self.assertEqual(res.status_code,404)
+       
+    def testPostMovie(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newMovie={
+            "title":"What is your name",
+            "release_date":"15th March 2024"
+        }
+        res = self.client().post('/movies',json=newMovie,headers=authHeader)
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'],True)
 
-    # def test_add_question_error(self):
-    #     new_question={
-    #         "question":"What is your name",
-    #         "difficulty":1,
-    #         "category":2
-    #     }
-    #     res = self.client().post('/questions',json=new_question)
-    #     data = json.loads(res.data)
-    #     self.assertEqual(res.status_code, 400)
-    #     self.assertEqual(data['success'],False)
-    #     self.assertEqual(data["message"],"Bad Request")
+    def testPostMovie_error(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newMovie={
+            "title":"What is your name"
+        }
+        res = self.client().post('/movies',json=newMovie,headers=authHeader)
+        self.assertEqual(res.status_code, 422)
 
-    # def test_search_questions(self):
-    #     res = self.client().post('/questions/search',json={"searchTeerm":"What"})
-    #     data = json.loads(res.data)
-    #     self.assertEqual(res.status_code, 200)
-    #     self.assertTrue(data['questions'])
-    #     self.assertTrue(data["totalQuestions"])
+    def testPostActor(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newActor={
+            "name":"Preeti",
+            "age":"22",
+            "gender":"Female"
+        }
+        res = self.client().post('/actors',json=newActor,headers=authHeader)
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'],True)
 
-    # def test_search_questions_error(self):
-    #     res = self.client().post('/questions/search',json=None)
-    #     data = json.loads(res.data)
-    #     self.assertEqual(res.status_code, 400)
-    #     self.assertEqual(data['success'],False)
-    #     self.assertEqual(data["message"],"Bad Request")
+    def testPostActor_error(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newActor={
+            "name":"name"
+        }
+        res = self.client().post('/actors',json=newActor,headers=authHeader)
+        self.assertEqual(res.status_code, 422)
 
-    # def test_questions_by_category(self):
-    #     res = self.client().get('/categories/1/questions')
-    #     data = json.loads(res.data)
-    #     category = Category.query.get(1).type
-    #     self.assertEqual(res.status_code, 200)
-    #     self.assertEqual(data["currentCategory"],category)
+    def testPatchMovie(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newMovie={
+            "title":"test edit",
+            "release_date":"15th March 2024"
+        }
+        res = self.client().patch('/movies/2',json=newMovie,headers=authHeader)
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['title'],newMovie.get('title'))
 
-    # def test_questions_by_category_error(self):
-    #     res = self.client().get('/categories/100/questions')
-    #     data = json.loads(res.data)
-    #     category = Category.query.get(1).type
-    #     self.assertEqual(res.status_code, 422)
-    #     self.assertEqual(data["success"],False)
+    def testPatchMovie_error(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newMovie={
+            "title":"test edit 1"
+        }
+        res = self.client().patch('/movies/2',json=newMovie,headers=authHeader)
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 422)
 
-    # def test_quiz(self):
-    #     request={
-    #         "previous_questions":[1,2,3],
-    #         "quiz_category":{
-    #             "id":0,
-    #             "type":"click"
-    #         }
-    #     }
-    #     res = self.client().post('/quizzes',json=request)
-    #     data = json.loads(res.data)
-    #     self.assertEqual(res.status_code, 200)
-    #     self.assertTrue(data['question'])
+    def testPatchActor(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newMovie={
+            "name":"test",
+            "age":"15",
+            "gender":"Female"
+        }
+        res = self.client().patch('/actors/2',json=newMovie,headers=authHeader)
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['name'],newMovie.get('name'))
 
-    # def test_quiz_error(self):
-    #     request={
-    #         "previous_questions":[1,2,3]
-    #     }
-    #     res = self.client().post('/quizzes',json=request)
-    #     data = json.loads(res.data)
-    #     self.assertEqual(res.status_code, 422)
-    #     self.assertEqual(data['success'],False)
+    def testPatchActor_error(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        newMovie={
+            "name":"test edit 1"
+        }
+        res = self.client().patch('/actors/2',json=newMovie,headers=authHeader)
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 422)
+
+    def testGetMovie(self):
+            authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+            res=self.client().get('/movies/2', headers=authHeader)
+            data=json.loads(res.data)
+            self.assertEqual(res.status_code,200)
+            self.assertTrue(data!=None)
+
+    def testGetMovie_error(self):
+        res = self.client().get('/movies/2')  #without authToken
+        data=json.loads(res.data)
+        self.assertEqual(res.status_code,401)
+
+    def testGetActor(self):
+        authHeader = {'Authorization': f'Bearer {self.producer_jwt}'}
+        res = self.client().get('/actors/2',headers=authHeader)
+        data=json.loads(res.data)
+        self.assertEqual(res.status_code,200)
+        self.assertTrue(data!=None)
+
+    def testGetActor_error(self):
+        res = self.client().get('/actors/2')
+        data=json.loads(res.data)
+        self.assertEqual(res.status_code,401)
 
 # Make the tests conveniently executable
 if __name__ == "__main__":

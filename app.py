@@ -1,4 +1,3 @@
-import os
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -148,7 +147,7 @@ def create_app(test_config=None):
       if actor==None:
           abort(404)
       try:
-          actor.name = body.get("name")
+          actor.name = body['name']
           actor.age = body['age']
           actor.gender = body['gender']
           actor.update()

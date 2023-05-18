@@ -1,9 +1,13 @@
 
 import os
-from sqlalchemy import Column, String, Integer, create_engine, Table
+from sqlalchemy import Column, String, Integer, create_engine, Table, ForeignKey
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import relationship
 import json
 # from sqlalchemy.ext.declarative import declarative_base
+from dotenv import load_dotenv
+
+load_dotenv()
 
 database_path = os.environ.get("DATABASE_PATH")
 # Base = declarative_base()
@@ -18,7 +22,7 @@ def setup_db(app, database_path=database_path):
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.app = app
     db.init_app(app)
-    db.create_all()
+    # db.create_all()
     # Base.metadata.create_all(bind=create_engine(database_path))
 
 class dbFunctions(db.Model):
@@ -32,12 +36,20 @@ class dbFunctions(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+# association_table = Table('association',
+#     Column('movie_id', ForeignKey('Movie.id'), primary_key=True),
+#     Column('actor_id', ForeignKey('Actor.id'), primary_key=True)
+# )
+
 class Movies(dbFunctions):
     __tablename__ = 'Movie'
 
     id = Column(Integer,  primary_key=True)
     title = Column(String, nullable=False)
     release_date = Column(String, nullable=False)
+    # actors = relationship("Actors",
+    #                 secondary=association_table)
+
 
     def __init__(self, title, release_date):
         self.title = title
